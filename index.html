@@ -1033,6 +1033,7 @@
 
         const errors = [];
         const warnings = [];
+        const estavaConcluida = atividadesConcluidas[atividadeAtual];
 
         const starts = nodes.filter((n) => n.type === "inicio");
         const ends = nodes.filter((n) => n.type === "fim");
@@ -1138,8 +1139,15 @@
         }
 
         const estruturaOK = !errors.length && !warnings.length;
-        const concluiuAtividade = estruturaOK && atividadeOK;
+        const tudoVerde =
+          nodes.length > 0 && nodes.every((node) => node.status === "correct");
+        const concluiuAtividade = estruturaOK && atividadeOK && tudoVerde;
         atividadesConcluidas[atividadeAtual] = concluiuAtividade;
+        const deveAvancarAutomaticamente =
+          concluiuAtividade &&
+          !estavaConcluida &&
+          atividadeAtual < atividades.length - 1;
+        const proximaAtividadeIndex = atividadeAtual + 1;
 
         if (concluiuAtividade && atividadeAtual < atividades.length - 1) {
           maiorAtividadeLiberada = Math.max(
@@ -1223,6 +1231,14 @@
         updateActivityNavigation();
         updateRelatorio();
         saveCurrentActivityState();
+
+        if (deveAvancarAutomaticamente) {
+          irParaAtividade(proximaAtividadeIndex);
+          feedbackEl.textContent =
+            `Pagina ${proximaAtividadeIndex + 1} liberada. ` +
+            feedbackPadraoAtividade(proximaAtividadeIndex);
+          saveCurrentActivityState();
+        }
       }
 
       function visit(id, set) {
