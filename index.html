@@ -1,0 +1,1580 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sandbox de Fluxograma - Versão 2</title>
+    <style>
+      :root {
+        --bg: #f4f7fb;
+        --panel: #ffffff;
+        --ink: #0f172a;
+        --muted: #64748b;
+        --line: #cbd5e1;
+        --primary: #2563eb;
+        --primary-soft: #dbeafe;
+        --ok: #15803d;
+        --ok-soft: #dcfce7;
+        --bad: #b91c1c;
+        --bad-soft: #fee2e2;
+        --warn: #92400e;
+        --warn-soft: #ffedd5;
+        --dark: #1e293b;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: 290px 1fr 330px;
+        min-height: 100vh;
+      }
+
+      .panel {
+        background: var(--panel);
+        border-right: 1px solid var(--line);
+        padding: 18px;
+        overflow: auto;
+      }
+
+      .panel:last-child {
+        border-right: none;
+        border-left: 1px solid var(--line);
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        margin-top: 0;
+      }
+
+      .title {
+        font-size: 1.35rem;
+        margin-bottom: 8px;
+      }
+
+      .muted {
+        color: var(--muted);
+        line-height: 1.5;
+        font-size: 0.95rem;
+      }
+
+      .shape-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .shape-btn,
+      .action-btn {
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 14px;
+        padding: 12px 14px;
+        cursor: pointer;
+        font-weight: bold;
+        text-align: left;
+        transition: 0.18s ease;
+      }
+
+      .shape-btn:hover,
+      .action-btn:hover {
+        border-color: var(--primary);
+        background: #f8fbff;
+      }
+
+      .shape-name {
+        display: block;
+        color: var(--ink);
+        margin-bottom: 4px;
+      }
+
+      .shape-desc {
+        display: block;
+        color: var(--muted);
+        font-size: 0.86rem;
+        font-weight: normal;
+        line-height: 1.35;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 14px 0 18px;
+      }
+
+      .action-btn.primary {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary);
+      }
+
+      .action-btn.success {
+        background: #166534;
+        color: #fff;
+        border-color: #166534;
+      }
+
+      .workspace {
+        padding: 18px;
+        overflow: auto;
+      }
+
+      .workspace-card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 16px;
+        min-height: calc(100vh - 36px);
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+      }
+
+      .flow-header {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+
+      .canvas {
+        position: relative;
+        min-height: 820px;
+        border: 2px dashed var(--line);
+        border-radius: 18px;
+        background:
+          linear-gradient(
+            to right,
+            rgba(203, 213, 225, 0.25) 1px,
+            transparent 1px
+          ),
+          linear-gradient(
+            to bottom,
+            rgba(203, 213, 225, 0.25) 1px,
+            transparent 1px
+          ),
+          #fcfdff;
+        background-size: 24px 24px;
+        overflow: hidden;
+      }
+
+      #connections {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      .node {
+        position: absolute;
+        min-width: 150px;
+        max-width: 220px;
+        padding: 12px 14px;
+        background: #fff;
+        border: 2px solid var(--primary);
+        box-shadow: 0 6px 14px rgba(37, 99, 235, 0.08);
+        cursor: grab;
+        user-select: none;
+        transition:
+          box-shadow 0.15s ease,
+          border-color 0.15s ease,
+          transform 0.08s ease;
+      }
+
+      .node:hover {
+        box-shadow: 0 10px 20px rgba(37, 99, 235, 0.14);
+      }
+      .node.selected {
+        outline: 3px solid rgba(37, 99, 235, 0.18);
+      }
+      .node.correct {
+        border-color: var(--ok);
+        background: var(--ok-soft);
+      }
+      .node.incorrect {
+        border-color: var(--bad);
+        background: var(--bad-soft);
+      }
+      .node.warning {
+        border-color: var(--warn);
+        background: var(--warn-soft);
+      }
+
+      .node.inicio,
+      .node.fim {
+        border-radius: 999px;
+        text-align: center;
+      }
+
+      .node.processo,
+      .node.entrada,
+      .node.saida {
+        border-radius: 14px;
+      }
+
+      .node.decisao {
+        width: 150px;
+        min-width: 150px;
+        min-height: 150px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform: rotate(45deg);
+        border-radius: 18px;
+        padding: 0;
+      }
+
+      .node.decisao .node-inner {
+        transform: rotate(-45deg);
+        padding: 12px;
+        text-align: center;
+        width: 100px;
+        line-height: 1.25;
+      }
+
+      .node-label {
+        font-size: 0.74rem;
+        font-weight: bold;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      .node.decisao .node-label {
+        margin-bottom: 4px;
+      }
+
+      .node-text {
+        font-size: 0.94rem;
+        font-weight: bold;
+        line-height: 1.35;
+        word-break: break-word;
+      }
+
+      .mini {
+        font-size: 0.83rem;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .property-box {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 14px;
+        margin-top: 14px;
+        background: #f8fbff;
+      }
+
+      .property-box label {
+        display: block;
+        font-size: 0.88rem;
+        font-weight: bold;
+        margin-bottom: 6px;
+        margin-top: 10px;
+      }
+
+      .property-box input,
+      .property-box textarea,
+      .property-box select {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px;
+        font: inherit;
+        background: #fff;
+      }
+
+      .property-box textarea {
+        min-height: 88px;
+        resize: vertical;
+      }
+
+      .hint,
+      .feedback-box {
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin-top: 12px;
+        line-height: 1.45;
+        font-size: 0.92rem;
+      }
+
+      .hint {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+      }
+
+      .feedback-box {
+        background: #f8fafc;
+        border: 1px solid var(--line);
+        white-space: pre-line;
+      }
+
+      .example-step {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        background: #fff;
+      }
+
+      .kbd {
+        display: inline-block;
+        border: 1px solid var(--line);
+        border-bottom-width: 3px;
+        border-radius: 8px;
+        padding: 3px 8px;
+        background: #fff;
+        font-size: 0.8rem;
+        font-weight: bold;
+      }
+
+      .activity-card {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 14px;
+        background: #f8fbff;
+        margin-top: 10px;
+      }
+
+      .activity-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .activity-status {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 0.78rem;
+        font-weight: bold;
+        background: var(--warn-soft);
+        color: var(--warn);
+        white-space: nowrap;
+      }
+
+      .activity-status.done {
+        background: var(--ok-soft);
+        color: var(--ok);
+      }
+
+      .activity-status.review {
+        background: var(--primary-soft);
+        color: var(--primary);
+      }
+
+      .nav-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .nav-buttons .action-btn {
+        flex: 1;
+      }
+
+      .action-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .report-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .report-item {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 12px;
+        background: #fff;
+      }
+
+      .report-item strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      @media (max-width: 1180px) {
+        .app {
+          grid-template-columns: 260px 1fr;
+        }
+        .right-panel {
+          grid-column: 1 / -1;
+          border-left: none !important;
+          border-top: 1px solid var(--line);
+        }
+      }
+
+      @media (max-width: 760px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+        .panel,
+        .right-panel {
+          border: none !important;
+          border-bottom: 1px solid var(--line) !important;
+        }
+        .workspace-card {
+          min-height: auto;
+        }
+        .canvas {
+          min-height: 680px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="panel">
+        <h1 class="title">Elementos do fluxograma</h1>
+        <p class="muted">
+          Clique em um elemento para adicioná-lo na área de criação. Depois,
+          selecione o bloco para editar texto, ligar ao próximo passo e
+          organizar o fluxo.
+        </p>
+
+        <div class="shape-list">
+          <button class="shape-btn" onclick="addNode('inicio')">
+            <span class="shape-name">Início</span>
+            <span class="shape-desc">Marca o começo do algoritmo.</span>
+          </button>
+          <button class="shape-btn" onclick="addNode('fim')">
+            <span class="shape-name">Fim</span>
+            <span class="shape-desc">Marca o encerramento do algoritmo.</span>
+          </button>
+          <button class="shape-btn" onclick="addNode('entrada')">
+            <span class="shape-name">Entrada</span>
+            <span class="shape-desc"
+              >Recebe dados, como variáveis ou informações do usuário.</span
+            >
+          </button>
+          <button class="shape-btn" onclick="addNode('processo')">
+            <span class="shape-name">Processo</span>
+            <span class="shape-desc">Executa cálculo, tratamento ou ação.</span>
+          </button>
+          <button class="shape-btn" onclick="addNode('decisao')">
+            <span class="shape-name">Decisão</span>
+            <span class="shape-desc"
+              >Faz uma pergunta e gera caminhos como sim e não.</span
+            >
+          </button>
+          <button class="shape-btn" onclick="addNode('saida')">
+            <span class="shape-name">Saída</span>
+            <span class="shape-desc">Mostra o resultado do algoritmo.</span>
+          </button>
+        </div>
+
+        <div class="property-box">
+          <h3>Como usar</h3>
+          <div class="mini">
+            1. Adicione os blocos.<br />
+            2. Clique em um bloco para editá-lo.<br />
+            3. Em <strong>Próximo bloco</strong>, escolha a ligação.<br />
+            4. Em decisão, informe também os caminhos <strong>Sim</strong> e
+            <strong>Não</strong>.<br />
+            5. Clique em <strong>Concluir</strong> para validar.
+          </div>
+        </div>
+
+        <div class="hint">
+          Dica: em <strong>Entrada</strong>, você pode escrever várias
+          variáveis, por exemplo: <strong>nome, idade, nota1, nota2</strong>.
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <div class="workspace-card">
+          <div class="flow-header">
+            <div>
+              <h2 style="margin-bottom: 6px">Área de criação</h2>
+              <div class="muted">
+                Editor visual simplificado para montar e validar fluxogramas.
+              </div>
+            </div>
+            <div class="toolbar">
+              <button class="action-btn" onclick="carregarExemplo()">
+                Ver exemplo
+              </button>
+              <button class="action-btn" onclick="organizarAutomaticamente()">
+                Organizar
+              </button>
+              <button class="action-btn success" onclick="validarFluxograma()">
+                Concluir
+              </button>
+              <button class="action-btn" onclick="limparTudo()">Limpar</button>
+            </div>
+          </div>
+
+          <div id="canvas" class="canvas">
+            <svg id="connections"></svg>
+          </div>
+        </div>
+      </main>
+
+      <aside class="panel right-panel">
+        <h2>Propriedades do bloco</h2>
+        <p class="muted">
+          Selecione um bloco para editar. O aluno pode alterar texto, definir
+          conexões e observar o modelo de referência.
+        </p>
+
+        <div class="property-box">
+          <label>Tipo do bloco</label>
+          <input
+            id="propTipo"
+            type="text"
+            disabled
+            placeholder="Selecione um bloco"
+          />
+
+          <label>Texto do bloco</label>
+          <textarea
+            id="propTexto"
+            placeholder="Ex.: idade, nota1, nota2"
+          ></textarea>
+
+          <label>Próximo bloco</label>
+          <select id="propNext"></select>
+
+          <div id="decisionFields" style="display: none">
+            <label>Próximo bloco - caminho SIM</label>
+            <select id="propYes"></select>
+
+            <label>Próximo bloco - caminho NÃO</label>
+            <select id="propNo"></select>
+          </div>
+
+          <div class="toolbar" style="margin-top: 12px">
+            <button class="action-btn primary" onclick="salvarPropriedades()">
+              Salvar bloco
+            </button>
+            <button class="action-btn" onclick="removerSelecionado()">
+              Excluir bloco
+            </button>
+          </div>
+        </div>
+
+        <h3 style="margin-top: 18px">Exemplo orientado</h3>
+        <div class="example-step">
+          <strong>Problema:</strong> verificar se o aluno foi aprovado.
+        </div>
+        <div class="example-step"><strong>Entrada:</strong> nome, nota</div>
+        <div class="example-step"><strong>Decisão:</strong> nota &gt;= 60?</div>
+        <div class="example-step"><strong>Saída 1:</strong> Aluno aprovado</div>
+        <div class="example-step">
+          <strong>Saída 2:</strong> Aluno reprovado
+        </div>
+
+        <div class="hint">
+          Exemplo de várias variáveis:
+          <strong>nome, idade, salario</strong>.<br />
+          Exemplo de processo:
+          <strong>media = (nota1 + nota2) / 2</strong>.<br />
+          Exemplo de decisão: <strong>media &gt;= 60?</strong>
+        </div>
+        <h3>Atividades</h3>
+        <div class="activity-card">
+          <div class="activity-meta">
+            <div>
+              <div class="mini">Pagina atual</div>
+              <strong id="atividadeTitulo">Pagina 1</strong>
+            </div>
+            <span id="atividadeStatus" class="activity-status">
+              Em andamento
+            </span>
+          </div>
+
+          <div id="atividadeDescricao" class="hint"></div>
+
+          <div class="nav-buttons">
+            <button
+              id="btnAnterior"
+              class="action-btn"
+              onclick="irParaAtividade(atividadeAtual - 1)"
+            >
+              Pagina anterior
+            </button>
+            <button
+              id="btnProxima"
+              class="action-btn primary"
+              onclick="irParaAtividade(atividadeAtual + 1)"
+            >
+              Proxima pagina
+            </button>
+          </div>
+
+          <div id="atividadeProgresso" class="mini" style="margin-top: 10px"></div>
+        </div>
+
+        <select
+          id="atividadeSelect"
+          onchange="carregarAtividade()"
+          style="display: none"
+        >
+          <option value="0">Nível 1 - Dobro</option>
+          <option value="1">Nível 1 - Soma</option>
+          <option value="2">Nível 1 - Área</option>
+          <option value="3">Nível 2 - Maior de idade</option>
+        </select>
+
+        <div id="atividadeDescricaoLegacy" class="hint" style="display: none"></div>
+
+        <div id="feedback" class="feedback-box">
+          Nenhuma validação executada ainda.
+        </div>
+        <div class="property-box">
+          <h3>Relatorio</h3>
+          <div id="relatorioResumo" class="mini"></div>
+          <div id="relatorioLista" class="report-list"></div>
+        </div>
+        <div class="hint" style="margin-top: 14px">
+          Atalhos visuais: <span class="kbd">verde</span> correto,
+          <span class="kbd">vermelho</span> incorreto,
+          <span class="kbd">laranja</span> atenção.
+        </div>
+      </aside>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("canvas");
+      const svg = document.getElementById("connections");
+      const feedbackEl = document.getElementById("feedback");
+      const atividadeTituloEl = document.getElementById("atividadeTitulo");
+      const atividadeDescricaoEl = document.getElementById(
+        "atividadeDescricao",
+      );
+      const atividadeStatusEl = document.getElementById("atividadeStatus");
+      const atividadeProgressoEl = document.getElementById(
+        "atividadeProgresso",
+      );
+      const btnAnteriorEl = document.getElementById("btnAnterior");
+      const btnProximaEl = document.getElementById("btnProxima");
+      const relatorioResumoEl = document.getElementById("relatorioResumo");
+      const relatorioListaEl = document.getElementById("relatorioLista");
+
+      let nodes = [];
+      let selectedId = null;
+      let dragState = null;
+      let idCounter = 1;
+
+      function placeholderFor(type) {
+        const map = {
+          inicio: "Início",
+          fim: "Fim",
+          entrada: "Ex.: nome, idade, nota1, nota2",
+          processo: "Ex.: media = (nota1 + nota2) / 2",
+          decisao: "Ex.: media >= 60?",
+          saida: "Ex.: Mostrar resultado",
+        };
+        return map[type] || "";
+      }
+
+      function addNode(type) {
+        const baseY = 60 + nodes.length * 90;
+        const node = {
+          id: idCounter++,
+          type,
+          text: placeholderFor(type),
+          x: type === "decisao" ? 250 : 230,
+          y: baseY,
+          next: null,
+          yes: null,
+          no: null,
+          status: "",
+        };
+        nodes.push(node);
+        selectedId = node.id;
+        render();
+        updatePropertiesPanel();
+        saveCurrentActivityState();
+      }
+
+      function render() {
+        canvas.querySelectorAll(".node").forEach((el) => el.remove());
+        svg.innerHTML = "";
+        svg.setAttribute("width", canvas.clientWidth);
+        svg.setAttribute("height", canvas.clientHeight);
+
+        nodes.forEach((node) => {
+          const el = document.createElement("div");
+          el.className = `node ${node.type} ${node.status || ""} ${selectedId === node.id ? "selected" : ""}`;
+          el.style.left = `${node.x}px`;
+          el.style.top = `${node.y}px`;
+          el.dataset.id = node.id;
+
+          const label = node.type.toUpperCase();
+
+          if (node.type === "decisao") {
+            el.innerHTML = `
+            <div class="node-inner">
+              <div class="node-label">${label}</div>
+              <div class="node-text">${escapeHtml(node.text)}</div>
+            </div>
+          `;
+          } else {
+            el.innerHTML = `
+            <div class="node-label">${label}</div>
+            <div class="node-text">${escapeHtml(node.text)}</div>
+          `;
+          }
+
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            selectedId = node.id;
+            render();
+            updatePropertiesPanel();
+          });
+
+          el.addEventListener("mousedown", startDrag);
+          canvas.appendChild(el);
+        });
+
+        drawConnections();
+      }
+
+      function escapeHtml(text) {
+        return String(text)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      function getNodeById(id) {
+        return nodes.find((n) => n.id === Number(id));
+      }
+
+      function getSelectedNode() {
+        return nodes.find((n) => n.id === selectedId) || null;
+      }
+
+      function updatePropertiesPanel() {
+        const node = getSelectedNode();
+        const tipo = document.getElementById("propTipo");
+        const texto = document.getElementById("propTexto");
+        const next = document.getElementById("propNext");
+        const yes = document.getElementById("propYes");
+        const no = document.getElementById("propNo");
+        const decisionFields = document.getElementById("decisionFields");
+
+        if (!node) {
+          tipo.value = "";
+          texto.value = "";
+          next.innerHTML = '<option value="">Selecione um bloco</option>';
+          yes.innerHTML = '<option value="">Selecione um bloco</option>';
+          no.innerHTML = '<option value="">Selecione um bloco</option>';
+          decisionFields.style.display = "none";
+          return;
+        }
+
+        tipo.value = node.type;
+        texto.value = node.text;
+        texto.placeholder = placeholderFor(node.type);
+
+        const options = ['<option value="">Nenhum</option>']
+          .concat(
+            nodes
+              .filter((n) => n.id !== node.id)
+              .map(
+                (n) =>
+                  `<option value="${n.id}">#${n.id} - ${n.type} - ${truncate(n.text, 28)}</option>`,
+              ),
+          )
+          .join("");
+
+        next.innerHTML = options;
+        yes.innerHTML = options;
+        no.innerHTML = options;
+
+        next.value = node.next ?? "";
+        yes.value = node.yes ?? "";
+        no.value = node.no ?? "";
+
+        if (node.type === "decisao") {
+          decisionFields.style.display = "block";
+          next.parentElement.style.display = "none";
+        } else {
+          decisionFields.style.display = "none";
+          next.parentElement.style.display = "block";
+        }
+      }
+
+      function truncate(text, len) {
+        return text.length > len ? text.slice(0, len - 1) + "…" : text;
+      }
+
+      function salvarPropriedades() {
+        const node = getSelectedNode();
+        if (!node) return;
+
+        node.text =
+          document.getElementById("propTexto").value.trim() ||
+          placeholderFor(node.type);
+
+        if (node.type === "decisao") {
+          node.next = null;
+          node.yes = valueOrNull(document.getElementById("propYes").value);
+          node.no = valueOrNull(document.getElementById("propNo").value);
+        } else {
+          node.next = valueOrNull(document.getElementById("propNext").value);
+          node.yes = null;
+          node.no = null;
+        }
+
+        render();
+        updatePropertiesPanel();
+        saveCurrentActivityState();
+      }
+
+      function valueOrNull(v) {
+        return v === "" ? null : Number(v);
+      }
+
+      function removerSelecionado() {
+        if (!selectedId) return;
+        const id = selectedId;
+        nodes = nodes.filter((n) => n.id !== id);
+        nodes.forEach((n) => {
+          if (n.next === id) n.next = null;
+          if (n.yes === id) n.yes = null;
+          if (n.no === id) n.no = null;
+        });
+        selectedId = null;
+        render();
+        updatePropertiesPanel();
+        saveCurrentActivityState();
+      }
+
+      function drawConnections() {
+        const rect = canvas.getBoundingClientRect();
+        svg.setAttribute("width", rect.width);
+        svg.setAttribute("height", Math.max(canvas.scrollHeight, rect.height));
+        addArrowMarker();
+
+        nodes.forEach((node) => {
+          if (node.type === "decisao") {
+            if (node.yes) drawLine(node, getNodeById(node.yes), "Sim", -40);
+            if (node.no) drawLine(node, getNodeById(node.no), "Não", 40);
+          } else if (node.next) {
+            drawLine(node, getNodeById(node.next), "", 0);
+          }
+        });
+      }
+
+      function addArrowMarker() {
+        const defs = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "defs",
+        );
+        defs.innerHTML = `
+        <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L9,3 z" fill="#64748b"></path>
+        </marker>
+      `;
+        svg.appendChild(defs);
+      }
+
+      function getAnchor(node, mode) {
+        const isDecision = node.type === "decisao";
+        const width = isDecision ? 150 : 180;
+        const height = isDecision ? 150 : 72;
+
+        if (mode === "from") {
+          return { x: node.x + width / 2, y: node.y + height };
+        }
+        return { x: node.x + width / 2, y: node.y };
+      }
+
+      function drawLine(fromNode, toNode, label, offsetX) {
+        if (!toNode) return;
+        const start = getAnchor(fromNode, "from");
+        const end = getAnchor(toNode, "to");
+        const midY = (start.y + end.y) / 2;
+        const c1x = start.x + offsetX;
+        const c2x = end.x + offsetX;
+
+        const path = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "path",
+        );
+        path.setAttribute(
+          "d",
+          `M ${start.x} ${start.y} C ${c1x} ${midY}, ${c2x} ${midY}, ${end.x} ${end.y}`,
+        );
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke", "#64748b");
+        path.setAttribute("stroke-width", "2.5");
+        path.setAttribute("marker-end", "url(#arrow)");
+        svg.appendChild(path);
+
+        if (label) {
+          const text = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "text",
+          );
+          text.setAttribute("x", (start.x + end.x) / 2 + offsetX / 2);
+          text.setAttribute("y", midY - 6);
+          text.setAttribute("fill", "#334155");
+          text.setAttribute("font-size", "12");
+          text.setAttribute("font-weight", "bold");
+          text.textContent = label;
+          svg.appendChild(text);
+        }
+      }
+
+      function startDrag(e) {
+        const id = Number(e.currentTarget.dataset.id);
+        const node = getNodeById(id);
+        if (!node) return;
+        selectedId = id;
+        updatePropertiesPanel();
+        render();
+
+        const startX = e.clientX;
+        const startY = e.clientY;
+        dragState = {
+          id,
+          originX: node.x,
+          originY: node.y,
+          startX,
+          startY,
+        };
+
+        document.addEventListener("mousemove", onDrag);
+        document.addEventListener("mouseup", endDrag);
+      }
+
+      function onDrag(e) {
+        if (!dragState) return;
+        const node = getNodeById(dragState.id);
+        if (!node) return;
+
+        const dx = e.clientX - dragState.startX;
+        const dy = e.clientY - dragState.startY;
+        node.x = Math.max(8, dragState.originX + dx);
+        node.y = Math.max(8, dragState.originY + dy);
+        render();
+      }
+
+      function endDrag() {
+        dragState = null;
+        document.removeEventListener("mousemove", onDrag);
+        document.removeEventListener("mouseup", endDrag);
+        saveCurrentActivityState();
+      }
+
+      function organizarAutomaticamente() {
+        const start = nodes.find((n) => n.type === "inicio");
+        if (!start) {
+          feedbackEl.textContent =
+            "Adicione primeiro um bloco de Início para organizar automaticamente.";
+          return;
+        }
+
+        const visited = new Set();
+        const levels = [];
+        let queue = [{ id: start.id, level: 0 }];
+
+        while (queue.length) {
+          const current = queue.shift();
+          if (visited.has(current.id)) continue;
+          visited.add(current.id);
+          if (!levels[current.level]) levels[current.level] = [];
+          levels[current.level].push(current.id);
+          const node = getNodeById(current.id);
+          const nextIds = [];
+          if (node?.next) nextIds.push(node.next);
+          if (node?.yes) nextIds.push(node.yes);
+          if (node?.no) nextIds.push(node.no);
+          nextIds.forEach((id) => queue.push({ id, level: current.level + 1 }));
+        }
+
+        let levelY = 50;
+        levels.forEach((ids) => {
+          const totalWidth = ids.length * 220;
+          let startX = Math.max(40, (canvas.clientWidth - totalWidth) / 2);
+          ids.forEach((id, index) => {
+            const node = getNodeById(id);
+            if (node) {
+              node.x = startX + index * 220;
+              node.y = levelY;
+            }
+          });
+          levelY += 170;
+        });
+
+        render();
+        saveCurrentActivityState();
+      }
+
+      function clearStatuses() {
+        nodes.forEach((n) => (n.status = ""));
+      }
+
+      function validarFluxograma() {
+        clearStatuses();
+
+        const errors = [];
+        const warnings = [];
+
+        const starts = nodes.filter((n) => n.type === "inicio");
+        const ends = nodes.filter((n) => n.type === "fim");
+
+        // =========================
+        // 1. REGRAS ESTRUTURAIS
+        // =========================
+
+        if (starts.length !== 1)
+          errors.push("O fluxograma deve ter exatamente 1 bloco de Início.");
+
+        if (ends.length < 1)
+          errors.push("O fluxograma deve ter pelo menos 1 bloco de Fim.");
+
+        nodes.forEach((node) => {
+          if (!node.text || !node.text.trim()) {
+            errors.push(`O bloco #${node.id} (${node.type}) está sem texto.`);
+            node.status = "incorrect";
+          }
+
+          if (node.type === "inicio" && !node.next) {
+            warnings.push(
+              `O bloco Início (#${node.id}) deveria apontar para o próximo passo.`
+            );
+            node.status ||= "warning";
+          }
+
+          if (node.type === "fim" && (node.next || node.yes || node.no)) {
+            warnings.push(
+              `O bloco Fim (#${node.id}) não deve apontar para outro bloco.`
+            );
+            node.status ||= "warning";
+          }
+
+          // =========================
+          // 2. DECISÃO (SÓ SE EXISTIR)
+          // =========================
+          if (node.type === "decisao") {
+            // permite desabilitar decisão em nível 1
+            if (nivelAtual === 1) {
+              errors.push("Esta atividade não permite o uso de decisão.");
+              node.status = "incorrect";
+            }
+
+            if (!node.yes || !node.no) {
+              errors.push(
+                `A decisão #${node.id} precisa ter caminho SIM e NÃO.`
+              );
+              node.status = "incorrect";
+            }
+
+            if (!node.text.includes("?")) {
+              warnings.push(
+                `A decisão #${node.id} deveria ser uma pergunta.`
+              );
+              node.status ||= "warning";
+            }
+          }
+
+          // =========================
+          // 3. FLUXO LINEAR
+          // =========================
+          else if (node.type !== "fim") {
+            if (!node.next) {
+              warnings.push(
+                `O bloco #${node.id} (${node.type}) está sem próximo passo.`
+              );
+              node.status ||= "warning";
+            }
+          }
+        });
+
+        // =========================
+        // 4. CONECTIVIDADE
+        // =========================
+
+        const start = starts[0];
+
+        if (start) {
+          const reachable = new Set();
+          visit(start.id, reachable);
+
+          nodes.forEach((node) => {
+            if (reachable.has(node.id)) {
+              if (!node.status) node.status = "correct";
+            } else {
+              errors.push(
+                `O bloco #${node.id} (${node.type}) não está conectado ao fluxo.`
+              );
+              node.status = "incorrect";
+            }
+          });
+        }
+
+        // =========================
+        // 5. VALIDAÇÃO DA ATIVIDADE
+        // =========================
+
+        let atividadeOK = true;
+
+        if (typeof atividades !== "undefined") {
+          atividadeOK = atividades[atividadeAtual].validar();
+        }
+
+        const estruturaOK = !errors.length && !warnings.length;
+        const concluiuAtividade = estruturaOK && atividadeOK;
+        atividadesConcluidas[atividadeAtual] = concluiuAtividade;
+
+        if (concluiuAtividade && atividadeAtual < atividades.length - 1) {
+          maiorAtividadeLiberada = Math.max(
+            maiorAtividadeLiberada,
+            atividadeAtual + 1,
+          );
+        }
+
+        relatorioAtividades[atividadeAtual] = {
+          ...relatorioAtividades[atividadeAtual],
+          tentativas: relatorioAtividades[atividadeAtual].tentativas + 1,
+          erros: errors.length,
+          avisos: warnings.length,
+          estruturaOk,
+          logicaOk: atividadeOK,
+          concluida: concluiuAtividade,
+          ultimaMensagem: concluiuAtividade
+            ? "Fluxograma correto e atividade concluida."
+            : atividadeOK
+              ? "Logica encontrada, mas ainda ha ajustes na estrutura."
+              : "Atividade ainda nao atendida.",
+        };
+
+        // =========================
+        // 6. RESULTADO FINAL
+        // =========================
+
+        let msg = "";
+
+        if (errors.length) {
+          msg += "❌ Erros:\n- " + errors.join("\n- ");
+        }
+
+        if (warnings.length) {
+          msg += (msg ? "\n\n" : "") + "⚠️ Atenções:\n- " + warnings.join("\n- ");
+        }
+
+        if (!errors.length && !warnings.length) {
+          msg = "✔ Estrutura do fluxograma está correta.";
+        }
+
+        // valida atividade pedagógica
+        if (!atividadeOK) {
+          msg +=
+            "\n\n📘 Atividade não atendida. Verifique lógica (entrada, processo ou saída).";
+        } else {
+          msg += "\n\n🎯 Atividade concluída com sucesso!";
+        }
+
+        msg = "";
+
+        if (errors.length) {
+          msg += "❌ Erros:\n- " + errors.join("\n- ");
+        }
+
+        if (warnings.length) {
+          msg += (msg ? "\n\n" : "") + "⚠️ Atenções:\n- " + warnings.join("\n- ");
+        }
+
+        if (!errors.length && !warnings.length) {
+          msg = "✔ Estrutura do fluxograma está correta.";
+        }
+
+        if (concluiuAtividade) {
+          msg +=
+            atividadeAtual < atividades.length - 1
+              ? "\n\nAtividade concluida com sucesso! A proxima pagina foi liberada."
+              : "\n\nVoce concluiu a ultima atividade.";
+        } else if (atividadeOK) {
+          msg +=
+            "\n\nA logica da atividade apareceu, mas o fluxograma ainda precisa estar completo para liberar a proxima pagina.";
+        } else {
+          msg +=
+            "\n\nAtividade nao atendida. Verifique logica, blocos obrigatorios e conexoes.";
+        }
+
+        feedbackEl.textContent = msg;
+
+        render();
+        updatePropertiesPanel();
+        updateActivityNavigation();
+        updateRelatorio();
+        saveCurrentActivityState();
+      }
+
+      function visit(id, set) {
+        if (!id || set.has(id)) return;
+        set.add(id);
+        const node = getNodeById(id);
+        if (!node) return;
+        if (node.next) visit(node.next, set);
+        if (node.yes) visit(node.yes, set);
+        if (node.no) visit(node.no, set);
+      }
+
+      function normalize(text) {
+        return String(text || "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .trim();
+      }
+
+      function carregarExemplo() {
+        nodes = [
+          {
+            id: 1,
+            type: "inicio",
+            text: "Início",
+            x: 320,
+            y: 40,
+            next: 2,
+            yes: null,
+            no: null,
+            status: "",
+          },
+          {
+            id: 2,
+            type: "entrada",
+            text: "nome, nota",
+            x: 300,
+            y: 170,
+            next: 3,
+            yes: null,
+            no: null,
+            status: "",
+          },
+          {
+            id: 3,
+            type: "decisao",
+            text: "nota >= 60?",
+            x: 315,
+            y: 310,
+            next: null,
+            yes: 4,
+            no: 5,
+            status: "",
+          },
+          {
+            id: 4,
+            type: "saida",
+            text: "Aluno aprovado",
+            x: 120,
+            y: 520,
+            next: 6,
+            yes: null,
+            no: null,
+            status: "",
+          },
+          {
+            id: 5,
+            type: "saida",
+            text: "Aluno reprovado",
+            x: 510,
+            y: 520,
+            next: 6,
+            yes: null,
+            no: null,
+            status: "",
+          },
+          {
+            id: 6,
+            type: "fim",
+            text: "Fim",
+            x: 325,
+            y: 680,
+            next: null,
+            yes: null,
+            no: null,
+            status: "",
+          },
+        ];
+        idCounter = 7;
+        selectedId = 3;
+        feedbackEl.textContent =
+          "Exemplo carregado. Observe a sequência: Início → Entrada → Decisão → Saídas → Fim.";
+        render();
+        updatePropertiesPanel();
+        saveCurrentActivityState();
+      }
+
+      function limparTudo() {
+        nodes = [];
+        selectedId = null;
+        idCounter = 1;
+        feedbackEl.textContent = "Área limpa. Monte um novo fluxograma.";
+        render();
+        updatePropertiesPanel();
+      }
+
+      canvas.addEventListener("click", () => {
+        selectedId = null;
+        render();
+        updatePropertiesPanel();
+      });
+
+      let atividadeAtual = 0;
+      let nivelAtual = 1;
+
+      const atividades = [
+        {
+          nivel: 1,
+          descricao:
+            "Receba um número, calcule o dobro e mostre o resultado. Utilize Entrada, Processo (com *2 ou dobro) e Saída.",
+          validar: () =>
+            hasTipo("inicio") &&
+            hasTipo("entrada") &&
+            (hasTexto("processo", "*2") ||
+              hasTexto("processo", "* 2") ||
+              hasTexto("processo", "dobro")) &&
+            hasTipo("saida") &&
+            hasTipo("fim"),
+        },
+        {
+          nivel: 1,
+          descricao:
+            "Receba dois números (a e b), some os valores e mostre o resultado. Utilize Entrada (com a, b), Processo (com +) e Saída.",
+          validar: () =>
+            hasTipo("inicio") &&
+            hasTexto("entrada", "a") &&
+            hasTexto("entrada", "b") &&
+            hasTexto("processo", "+") &&
+            hasTipo("saida") &&
+            hasTipo("fim"),
+        },
+        {
+          nivel: 1,
+          descricao:
+            "Calcule a área do retângulo. Receba base e altura, multiplique os valores e mostre o resultado.",
+          validar: () =>
+            hasTipo("inicio") &&
+            hasTexto("entrada", "base") &&
+            hasTexto("entrada", "altura") &&
+            hasTexto("processo", "*") &&
+            hasTipo("saida") &&
+            hasTipo("fim"),
+        },
+        {
+          nivel: 2,
+          descricao:
+            "Verifique se uma pessoa é maior de idade. Receba a idade, use uma Decisão (idade >= 18?) e mostre o resultado apropriado.",
+          validar: () =>
+            hasTipo("inicio") &&
+            hasTipo("entrada") &&
+            hasTipo("decisao") &&
+            hasTexto("decisao", "18") &&
+            hasTipo("saida") &&
+            hasTipo("fim"),
+        },
+      ];
+
+      const relatorioAtividades = atividades.map((atividade, index) => ({
+        titulo: `Pagina ${index + 1}`,
+        descricao: atividade.descricao,
+        tentativas: 0,
+        erros: 0,
+        avisos: 0,
+        estruturaOk: false,
+        logicaOk: false,
+        concluida: false,
+        ultimaMensagem: "Ainda nao validada.",
+      }));
+
+      const atividadeEstados = atividades.map(() => null);
+      const atividadesConcluidas = atividades.map(() => false);
+      let maiorAtividadeLiberada = 0;
+
+      function cloneNodesState(list) {
+        return list.map((node) => ({ ...node }));
+      }
+
+      function feedbackPadraoAtividade(index) {
+        return `Atividade ${index + 1} de ${atividades.length}. Monte o fluxograma e clique em Concluir para validar.`;
+      }
+
+      function updateRelatorio() {
+        const concluidas = relatorioAtividades.filter(
+          (item) => item.concluida,
+        ).length;
+        const tentativas = relatorioAtividades.reduce(
+          (total, item) => total + item.tentativas,
+          0,
+        );
+
+        relatorioResumoEl.textContent =
+          `Concluidas: ${concluidas}/${atividades.length} | Tentativas: ${tentativas} | Paginas liberadas: ${maiorAtividadeLiberada + 1}/${atividades.length}`;
+
+        relatorioListaEl.innerHTML = relatorioAtividades
+          .map((item, index) => {
+            const status = item.concluida
+              ? "Concluida"
+              : item.tentativas > 0
+                ? "Em revisao"
+                : "Pendente";
+            const atual = index === atividadeAtual ? "Pagina atual." : "";
+
+            return `
+              <div class="report-item">
+                <strong>${item.titulo} - ${status}</strong>
+                <div class="mini">${atual} Tentativas: ${item.tentativas} | Erros: ${item.erros} | Avisos: ${item.avisos}</div>
+                <div class="mini">Ultimo resultado: ${escapeHtml(item.ultimaMensagem)}</div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function saveCurrentActivityState() {
+        atividadeEstados[atividadeAtual] = {
+          nodes: cloneNodesState(nodes),
+          selectedId,
+          idCounter,
+          feedback: feedbackEl.textContent,
+        };
+      }
+
+      function loadCurrentActivityState() {
+        const state = atividadeEstados[atividadeAtual];
+
+        if (state) {
+          nodes = cloneNodesState(state.nodes);
+          selectedId = state.selectedId;
+          idCounter = state.idCounter;
+          feedbackEl.textContent =
+            state.feedback || feedbackPadraoAtividade(atividadeAtual);
+          return;
+        }
+
+        nodes = [];
+        selectedId = null;
+        idCounter = 1;
+        feedbackEl.textContent = feedbackPadraoAtividade(atividadeAtual);
+      }
+
+      function updateActivityNavigation() {
+        const concluida = atividadesConcluidas[atividadeAtual];
+        const precisaRevisao =
+          !concluida && atividadeAtual < maiorAtividadeLiberada;
+
+        atividadeTituloEl.textContent = `Pagina ${atividadeAtual + 1}`;
+        atividadeDescricaoEl.innerText = atividades[atividadeAtual].descricao;
+
+        atividadeStatusEl.textContent = concluida
+          ? "Concluida"
+          : precisaRevisao
+            ? "Revisar"
+            : "Em andamento";
+        atividadeStatusEl.className = `activity-status ${concluida ? "done" : precisaRevisao ? "review" : ""}`;
+
+        atividadeProgressoEl.textContent = `Progresso: ${atividadesConcluidas.filter(Boolean).length}/${atividades.length} atividades concluidas.`;
+
+        btnAnteriorEl.disabled = atividadeAtual === 0;
+
+        const ultimaPagina = atividadeAtual === atividades.length - 1;
+        const proximaLiberada = atividadeAtual + 1 <= maiorAtividadeLiberada;
+        btnProximaEl.disabled = ultimaPagina || !proximaLiberada;
+        updateRelatorio();
+      }
+
+      function carregarAtividade() {
+        const alvo = Number(document.getElementById("atividadeSelect").value);
+        irParaAtividade(alvo);
+      }
+
+      function irParaAtividade(index) {
+        if (index < 0 || index >= atividades.length) return;
+
+        if (index > maiorAtividadeLiberada) {
+          feedbackEl.textContent =
+            "Conclua corretamente a pagina atual para liberar a proxima atividade.";
+          updateActivityNavigation();
+          saveCurrentActivityState();
+          return;
+        }
+
+        saveCurrentActivityState();
+        atividadeAtual = index;
+        nivelAtual = atividades[atividadeAtual].nivel;
+
+        const atividadeSelect = document.getElementById("atividadeSelect");
+        if (atividadeSelect) {
+          atividadeSelect.value = String(index);
+        }
+
+        controlarDecisao();
+        loadCurrentActivityState();
+        render();
+        updatePropertiesPanel();
+        updateActivityNavigation();
+      }
+
+      function controlarDecisao() {
+        const btnDecisao = document.querySelector(
+          "button[onclick=\"addNode('decisao')\"]",
+        );
+
+        if (!btnDecisao) return;
+
+        if (nivelAtual === 1) {
+          btnDecisao.style.opacity = "0.4";
+          btnDecisao.style.pointerEvents = "none";
+        } else {
+          btnDecisao.style.opacity = "1";
+          btnDecisao.style.pointerEvents = "auto";
+        }
+      }
+
+      function hasTipo(tipo) {
+        return nodes.some((n) => n.type === tipo);
+      }
+
+      function hasTexto(tipo, texto) {
+        return nodes.some(
+          (n) => n.type === tipo && normalize(n.text).includes(texto),
+        );
+      }
+
+      function limparTudo() {
+        nodes = [];
+        selectedId = null;
+        idCounter = 1;
+        feedbackEl.textContent = feedbackPadraoAtividade(atividadeAtual);
+        render();
+        updatePropertiesPanel();
+        saveCurrentActivityState();
+      }
+
+      canvas.addEventListener("click", () => {
+        saveCurrentActivityState();
+      });
+
+      window.addEventListener("resize", render);
+
+      feedbackEl.textContent = feedbackPadraoAtividade(0);
+      irParaAtividade(0);
+    </script>
+  </body>
+</html>
