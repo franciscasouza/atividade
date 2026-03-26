@@ -1337,21 +1337,6 @@
         saveCurrentActivityState();
       }
 
-      function limparTudo() {
-        nodes = [];
-        selectedId = null;
-        idCounter = 1;
-        feedbackEl.textContent = "Área limpa. Monte um novo fluxograma.";
-        render();
-        updatePropertiesPanel();
-      }
-
-      canvas.addEventListener("click", () => {
-        selectedId = null;
-        render();
-        updatePropertiesPanel();
-      });
-
       let atividadeAtual = 0;
       let nivelAtual = 1;
 
