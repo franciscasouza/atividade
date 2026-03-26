@@ -1233,7 +1233,7 @@
         saveCurrentActivityState();
 
         if (deveAvancarAutomaticamente) {
-          irParaAtividade(proximaAtividadeIndex);
+          irParaAtividade(proximaAtividadeIndex, true);
           feedbackEl.textContent =
             `Pagina ${proximaAtividadeIndex + 1} liberada. ` +
             feedbackPadraoAtividade(proximaAtividadeIndex);
@@ -1505,7 +1505,7 @@
         irParaAtividade(alvo);
       }
 
-      function irParaAtividade(index) {
+      function irParaAtividade(index, manterBlocos = false) {
         if (index < 0 || index >= atividades.length) return;
 
         if (index > maiorAtividadeLiberada) {
@@ -1526,7 +1526,14 @@
         }
 
         controlarDecisao();
-        loadCurrentActivityState();
+        
+        if (!manterBlocos) {
+          loadCurrentActivityState();
+        } else {
+          // Limpa status dos blocos para a nova atividade
+          nodes.forEach(n => n.status = "");
+        }
+        
         render();
         updatePropertiesPanel();
         updateActivityNavigation();
